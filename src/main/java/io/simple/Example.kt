@@ -1,17 +1,25 @@
 package io.simple
 
-import io.simple.server.HttpServer
+import io.simple.logging.LoggerLevel
 import io.simple.model.ContentTypeValues
 import io.simple.model.HttpHeaders
 import io.simple.model.HttpResponse
 import io.simple.model.HttpStatusCode
+import io.simple.plugin.defaults.ContentTypePlugin
+import io.simple.server.*
+import io.simple.utils.findHeader
 
 fun main() {
     HttpServer(65000) {
+
+        install(ContentTypePlugin) {
+            setDefaultContentType(ContentTypeValues.JSON)
+        }
+
         post("/echo") {
             return@post HttpResponse(
                 statusCode = HttpStatusCode.OK,
-                headers = listOf(HttpHeaders.ContentType(ContentTypeValues.JSON), HttpHeaders.CustomHeaders("Authorization","Bearer 123")),
+                headers = listOf(HttpHeaders.CustomHeaders("Authorization","Bearer 123")),
                 body = request.body
             )
         }
@@ -27,7 +35,6 @@ fun main() {
         patch("/echo") {
              HttpResponse(
                 statusCode = HttpStatusCode.OK,
-                headers = listOf(HttpHeaders.ContentType(ContentTypeValues.JSON), HttpHeaders.CustomHeaders("Authorization","Bearer 123")),
                 body = request.body
             )
         }
@@ -49,3 +56,4 @@ fun main() {
         }
     }
 }
+

@@ -1,6 +1,7 @@
 package io.simple.model
 
-class HttpRequest (
+data class HttpRequest (
+    val methodAndRoute: HttpMethodAndRoute,
     val headers: List<HttpHeaders>,
     val body: String
 )

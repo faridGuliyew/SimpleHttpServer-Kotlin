@@ -5,9 +5,11 @@ import io.simple.logging.Logger
 import io.simple.logging.LoggerLevel
 import io.simple.logging.errorWithLog
 import io.simple.model.*
-import io.simple.utils.addHandler
-import io.simple.utils.findHeader
-import io.simple.utils.sendResponseAndClose
+import io.simple.plugin.receive.HttpReceivePlugin
+import io.simple.plugin.receive.HttpReceivePluginScope
+import io.simple.plugin.send.HttpSendPlugin
+import io.simple.plugin.send.HttpSendPluginScope
+import io.simple.utils.*
 import java.net.ServerSocket
 import java.net.Socket
 import kotlin.concurrent.thread
@@ -21,6 +23,8 @@ class HttpServer (
     private val logger = Logger(loggerLevel)
     private val serverSocket = ServerSocket(port)
     private val handlers = mutableMapOf<HttpMethod, MutableMap<String, HttpRouteHandler>>()
+    private val receivePlugins = mutableReceivePluginMapOf<HttpReceivePluginScope>()
+    private val sendPlugins = mutableSendPluginMapOf<HttpSendPluginScope>()
 
     init {
         configureServer()
@@ -59,14 +63,27 @@ class HttpServer (
         val body = String(bodyChars)
 
         // Build request
-        val httpRequest = HttpRequest(
+        var httpRequest = HttpRequest(
+            methodAndRoute = httpMethodAndRoute,
             headers = requestHeaders,
             body = body
         )
+        // Apply receive plugins
+        val receivePluginScope = object : HttpReceivePluginScope {
+            override val request: HttpRequest = httpRequest
+            override fun overrideRequest(value: HttpRequest) { httpRequest = value }
+        }
+        receivePlugins.forEach { (plugin, block) -> block.invoke(plugin.scopeImpl(receivePluginScope)) }
 
-        // Get response
+        // Generate response
         val routeScope = object : RouteScope { override val request: HttpRequest = httpRequest }
-        val httpResponse = handler.block(routeScope)
+        var httpResponse = handler.block(routeScope)
+        // Apply send plugins
+        val sendPluginScope = object : HttpSendPluginScope {
+            override val response: HttpResponse = httpResponse
+            override fun overrideResponse(value: HttpResponse) { httpResponse = value }
+        }
+        sendPlugins.forEach { plugin, block-> block.invoke(plugin.scopeImpl(sendPluginScope)) }
         clientSocket.sendResponseAndClose(httpResponse)
     }
 
@@ -80,6 +97,7 @@ class HttpServer (
                 try {
                     handleClient(clientSocket)
                 } catch (e: Exception) {
+                    logger.log(e.message.orEmpty(), LoggerLevel.ERROR)
                     clientSocket.sendResponseAndClose(HttpResponse.noHandlerFound)
                 }
             }
@@ -89,6 +107,10 @@ class HttpServer (
     private fun configureServer() {
         logger.log("Configuring the server...", LoggerLevel.INFO)
         val httpServerConfigScope = object : HttpServerConfigScope {
+            override fun log(message: String, level: LoggerLevel) {
+                logger.log(message, level)
+            }
+
             override fun get(route: String, block: RouteScope.() -> HttpResponse) {
                 val handler = HttpRouteHandler(route, block)
                 handlers.addHandler(HttpMethod.GET, handler, logger)
@@ -112,6 +134,16 @@ class HttpServer (
             override fun delete(route: String, block: RouteScope.() -> HttpResponse) {
                 val handler = HttpRouteHandler(route, block)
                 handlers.addHandler(HttpMethod.DELETE, handler, logger)
+            }
+
+            override fun <T : HttpSendPluginScope> install(plugin: HttpSendPlugin<T>, block: T.() -> Unit) {
+                logger.log("Installed send plugin: ${plugin.name}", LoggerLevel.INFO)
+                sendPlugins[plugin] = block as HttpSendPluginScope.() -> Unit
+            }
+
+            override fun <T : HttpReceivePluginScope> install(plugin: HttpReceivePlugin<T>, block: T.() -> Unit) {
+                logger.log("Installed receive plugin: ${plugin.name}", LoggerLevel.INFO)
+                receivePlugins[plugin] = block as HttpReceivePluginScope.() -> Unit
             }
         }
         config(httpServerConfigScope)

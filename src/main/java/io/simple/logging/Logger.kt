@@ -22,5 +22,5 @@ inline fun Logger.errorWithLog(exception: HttpException): Nothing {
 }
 
 enum class LoggerLevel {
-    ALL, NONE, WARN, ERROR, INFO
+    ALL, NONE, WARN, ERROR, INFO, DEBUG
 }

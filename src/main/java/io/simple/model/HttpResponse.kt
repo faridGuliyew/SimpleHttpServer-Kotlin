@@ -1,8 +1,8 @@
 package io.simple.model
 
-class HttpResponse (
+data class HttpResponse (
     val statusCode: HttpStatusCode,
-    val headers: List<HttpHeaders>,
+    val headers: List<HttpHeaders> = emptyList(),
     val body: String
 ) {
 
