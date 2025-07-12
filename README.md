@@ -1,17 +1,24 @@
-🔥 Simple Kotlin HTTP Server
+# 🔥 Simple Kotlin HTTP Server
 
 A lightweight and customizable Kotlin HTTP server with support for all major HTTP methods, custom headers, and content-type management.
 
-🚀 Features
+---
 
-✅ Supports GET, POST, PUT, PATCH, DELETE
-🔐 Custom header support
-📦 Custom plugin support
-🔍 Easy request logging
-🧱 Simple and readable DSL
+## 🚀 Features
 
-Here’s how to create a server that echoes requests on /echo for all HTTP methods:
+- ✅ Supports **GET**, **POST**, **PUT**, **PATCH**, **DELETE**
+- 🔐 Custom header support
+- 📦 Custom plugin support
+- 🧾 Easy request logging
+- ✨ Simple and readable DSL
 
+---
+
+## 🛠️ Example Usage
+
+Here’s how to create a server that echoes requests on `/echo` for all HTTP methods:
+
+```kotlin
 HttpServer(
     port = 65000,
     loggerLevel = LoggerLevel.ALL
@@ -77,31 +84,19 @@ HttpServer(
         )
     }
 }
-📦 Installation
+```
 
-Coming soon — publishing as a library.
 
-📚 API Overview
+## 📬 Try it out
 
-HttpServer(...) { }
-port: Port number to listen on.
-loggerLevel: Controls logging verbosity.
-install(ContentTypePlugin) { ... }
-Set default content type for responses.
-Route Handlers
-DSL-style: get(path), post(path), put(path), patch(path), delete(path)
-Handlers return HttpResponse(...)
-📬 Sample Request
-
+```curl
 curl -X POST http://localhost:65000/echo \
   -H "Content-Type: application/json" \
   -d '{"message": "hello"}'
+```
 
-🔧 TODO
+## 🧪 Coming soon
 
- Middleware support
- Route parameters
- Library publishing
-❤️ License
-
-MIT — free to use, modify, and distribute.
+Middleware support
+Route/Query parameters
+Library publishing
