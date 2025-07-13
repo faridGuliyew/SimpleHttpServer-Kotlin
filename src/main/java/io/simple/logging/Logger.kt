@@ -11,6 +11,14 @@ class Logger (private val loggerLevel: LoggerLevel) {
         logUnchecked(message, level)
     }
 
+    fun log(exception: HttpException) {
+        val level = LoggerLevel.WARN
+        if (loggerLevel == LoggerLevel.NONE) return
+        if (level != loggerLevel && loggerLevel != LoggerLevel.ALL) return
+
+        logUnchecked(exception.message.orEmpty(), level)
+    }
+
     private fun logUnchecked(message: String, level: LoggerLevel) {
         println("$level - $message")
     }

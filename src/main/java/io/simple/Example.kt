@@ -14,18 +14,17 @@ fun main() {
     ) {
 
         install(ContentTypePlugin) {
-            setDefaultContentType(ContentTypeValues.JSON)
+            setDefaultContentType(ContentTypeValues.TEXT_PLAIN)
         }
 
-        install(DefaultInterceptorPlugin) {
-            intercept { request, response->
+        get("/echo") {
+            println(request)
+            val message = queryParams["message"]
 
-                if (request.body.isEmpty()) return@intercept response.copy(
-                    body = "BODY SHOULD NOT BE EMPTY!"
-                )
-
-                return@intercept response
-            }
+            HttpResponse(
+                statusCode = HttpStatusCode.OK,
+                body = "$message"
+            )
         }
 
         post(
@@ -81,14 +80,6 @@ fun main() {
         delete("/echo") {
              HttpResponse(
                 statusCode = HttpStatusCode.INTERNAL_SERVER_ERROR,
-                headers = listOf(HttpHeaders.ContentType(ContentTypeValues.JSON), HttpHeaders.CustomHeaders("Authorization","Bearer 123")),
-                body = request.body
-            )
-        }
-
-        get("/echo") {
-             HttpResponse(
-                statusCode = HttpStatusCode.OK,
                 headers = listOf(HttpHeaders.ContentType(ContentTypeValues.JSON), HttpHeaders.CustomHeaders("Authorization","Bearer 123")),
                 body = request.body
             )

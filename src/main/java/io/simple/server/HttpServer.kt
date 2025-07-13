@@ -5,6 +5,7 @@ import io.simple.logging.Logger
 import io.simple.logging.LoggerLevel
 import io.simple.logging.errorWithLog
 import io.simple.model.*
+import io.simple.model.HttpHeaders.Companion.CONTENT_LENGTH
 import io.simple.plugin.receive.HttpReceivePlugin
 import io.simple.plugin.receive.HttpReceivePluginScope
 import io.simple.plugin.receive_and_send.HttpReceiveAndSendPlugin
@@ -69,12 +70,13 @@ class HttpServer (
             requestHeaders.add(HttpHeaders.parse(line))
         }
 
-        val contentLength = requestHeaders.findHeader<HttpHeaders.ContentLength>() ?: run {
-            logger.errorWithLog(HttpException.HeaderNotFoundException(HttpHeaders.CONTENT_LENGTH))
+        val contentLength = requestHeaders.findHeader<HttpHeaders.ContentLength>()
+        if (contentLength == null) {
+            logger.log(HttpException.HeaderNotFoundException(CONTENT_LENGTH))
         }
 
         // Parse body
-        val bodyChars = CharArray(contentLength.length)
+        val bodyChars = CharArray(contentLength?.length ?: 0)
         reader.read(bodyChars)
         val body = String(bodyChars)
 

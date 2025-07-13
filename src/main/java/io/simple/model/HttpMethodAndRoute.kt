@@ -1,5 +1,7 @@
 package io.simple.model
 
+import java.net.URLDecoder
+
 data class HttpMethodAndRoute(
     val method: HttpMethod,
     val route: HttpReceivedRoute
@@ -29,7 +31,8 @@ data class HttpReceivedRoute(
     companion object {
         fun parse(line: String): HttpReceivedRoute { // -> /echo/2/1?q=hi&name=farid
             val route = line.substringBefore('?')
-            val querySection = line.substringAfter('?', "")
+
+            val querySection = URLDecoder.decode(line.substringAfter('?', ""), "UTF-8")
             val queries = querySection.split('&').takeIf { it.all { it.isNotEmpty() } }.orEmpty()
             val queryMap = queries.map {
                 val keyAndValue = it.split('=', limit = 2)
