@@ -10,12 +10,12 @@ fun MutableMap<HttpMethod, MutableMap<String, HttpRouteHandler>>.addHandler(
     handler: HttpRouteHandler,
     logger: Logger
 ) {
-    val isHandlerAlreadyRegisteredForRoute = this[method]?.containsKey(handler.route) == true
+    val isHandlerAlreadyRegisteredForRoute = this[method]?.containsKey(handler.definition.route) == true
     if (isHandlerAlreadyRegisteredForRoute) {
-        logger.log("There are multiple handlers for $method ${handler.route}. Overriding...", LoggerLevel.WARN)
+        logger.log("There are multiple handlers for $method ${handler.definition}. Overriding...", LoggerLevel.WARN)
     }
 
     this[method] = this[method].orEmpty().toMutableMap().apply {
-        put(handler.route, handler)
+        put(handler.definition.route, handler)
     }
 }

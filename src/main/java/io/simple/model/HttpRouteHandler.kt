@@ -4,6 +4,6 @@ import io.simple.server.RouteScope
 
 
 data class HttpRouteHandler (
-    val route: String,
+    val definition: HttpRouteDefinition,
     val block: RouteScope.() -> HttpResponse
 )

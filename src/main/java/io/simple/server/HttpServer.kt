@@ -37,16 +37,25 @@ class HttpServer (
         val reader = clientSocket.getInputStream().bufferedReader()
 
         val requestFirstLine = reader.readLine()
-        val httpMethodAndRoute = HttpMethodAndRoute.parse(requestFirstLine)
-        logger.log("${httpMethodAndRoute.method} ${httpMethodAndRoute.route}", LoggerLevel.INFO)
-        // Locate a registered handler for the route
+        var httpMethodAndRoute = HttpMethodAndRoute.parse(requestFirstLine)
+        logger.log("RECEIVED -> ${httpMethodAndRoute.method} ${httpMethodAndRoute.route}", LoggerLevel.INFO)
+        // Locate a registered route definition for the requested route.
         val handlersForMethod = handlers[httpMethodAndRoute.method] ?: run {
             logger.errorWithLog(HttpException.NoRouteHandlerFoundException(httpMethodAndRoute))
         }
-        val handler = handlersForMethod[httpMethodAndRoute.route] ?: run {
+        val (correspondingRoute, correspondingDefinition) = handlersForMethod.findMatchingReceivedRouteAndDefinition(httpMethodAndRoute.route) ?: run {
             logger.errorWithLog(HttpException.NoRouteHandlerFoundException(httpMethodAndRoute))
         }
+        val handler = handlersForMethod[correspondingDefinition.route] ?: run {
+            logger.errorWithLog(HttpException.NoRouteHandlerFoundException(httpMethodAndRoute))
+        }
+        // Match received route to definition - resolve keys
+        httpMethodAndRoute = httpMethodAndRoute
+            .copy(route = correspondingRoute.resolvePathParamKeysByRouteDefinition(correspondingDefinition))
 
+        logger.log("HANDLED AS -> ${httpMethodAndRoute.method} ${httpMethodAndRoute.route}", LoggerLevel.INFO)
+
+        // Parse all headers
         val requestHeaders = mutableListOf<HttpHeaders>()
         while (true) {
             val line = reader.readLine() ?: break
@@ -58,6 +67,7 @@ class HttpServer (
             logger.errorWithLog(HttpException.HeaderNotFoundException(HttpHeaders.CONTENT_LENGTH))
         }
 
+        // Parse body
         val bodyChars = CharArray(contentLength.length)
         reader.read(bodyChars)
         val body = String(bodyChars)
@@ -112,26 +122,49 @@ class HttpServer (
             }
 
             override fun get(route: String, block: RouteScope.() -> HttpResponse) {
+                val handler = HttpRouteHandler(HttpRouteDefinition(route), block)
+                handlers.addHandler(HttpMethod.GET, handler, logger)
+            }
+
+            override fun get(route: HttpRouteDefinition, block: RouteScope.() -> HttpResponse) {
                 val handler = HttpRouteHandler(route, block)
                 handlers.addHandler(HttpMethod.GET, handler, logger)
             }
 
             override fun post(route: String, block: RouteScope.() -> HttpResponse) {
+                val handler = HttpRouteHandler(HttpRouteDefinition(route), block)
+                handlers.addHandler(HttpMethod.POST, handler, logger)
+            }
+
+            override fun post(route: HttpRouteDefinition, block: RouteScope.() -> HttpResponse) {
                 val handler = HttpRouteHandler(route, block)
                 handlers.addHandler(HttpMethod.POST, handler, logger)
             }
 
             override fun put(route: String, block: RouteScope.() -> HttpResponse) {
+                val handler = HttpRouteHandler(HttpRouteDefinition(route), block)
+                handlers.addHandler(HttpMethod.PUT, handler, logger)
+            }
+            override fun put(route: HttpRouteDefinition, block: RouteScope.() -> HttpResponse) {
                 val handler = HttpRouteHandler(route, block)
                 handlers.addHandler(HttpMethod.PUT, handler, logger)
             }
 
             override fun patch(route: String, block: RouteScope.() -> HttpResponse) {
+                val handler = HttpRouteHandler(HttpRouteDefinition(route), block)
+                handlers.addHandler(HttpMethod.PATCH, handler, logger)
+            }
+            override fun patch(route: HttpRouteDefinition, block: RouteScope.() -> HttpResponse) {
                 val handler = HttpRouteHandler(route, block)
                 handlers.addHandler(HttpMethod.PATCH, handler, logger)
             }
 
             override fun delete(route: String, block: RouteScope.() -> HttpResponse) {
+                val handler = HttpRouteHandler(HttpRouteDefinition(route), block)
+                handlers.addHandler(HttpMethod.DELETE, handler, logger)
+            }
+
+            override fun delete(route: HttpRouteDefinition, block: RouteScope.() -> HttpResponse) {
                 val handler = HttpRouteHandler(route, block)
                 handlers.addHandler(HttpMethod.DELETE, handler, logger)
             }
