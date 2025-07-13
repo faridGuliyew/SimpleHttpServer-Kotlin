@@ -3,6 +3,7 @@ package io.simple
 import io.simple.logging.LoggerLevel
 import io.simple.model.*
 import io.simple.plugin.defaults.ContentTypePlugin
+import io.simple.plugin.defaults.DefaultInterceptorPlugin
 import io.simple.server.*
 import io.simple.utils.findHeader
 
@@ -14,6 +15,17 @@ fun main() {
 
         install(ContentTypePlugin) {
             setDefaultContentType(ContentTypeValues.JSON)
+        }
+
+        install(DefaultInterceptorPlugin) {
+            intercept { request, response->
+
+                if (request.body.isEmpty()) return@intercept response.copy(
+                    body = "BODY SHOULD NOT BE EMPTY!"
+                )
+
+                return@intercept response
+            }
         }
 
         post(
