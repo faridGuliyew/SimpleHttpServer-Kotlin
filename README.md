@@ -93,10 +93,30 @@ HttpServer(
 curl -X POST http://localhost:65000/echo \
   -H "Content-Type: application/json" \
   -d '{"message": "hello"}'
+
+
+
 ```
 
-## 🧪 Coming soon
+## 🧪 How to include in your project
 
-Middleware support
-Route/Query parameters
-Library publishing
+### Usage
+
+```gradle
+repositories {
+    maven {
+        url = uri("https://maven.pkg.github.com/faridGuliyew/SimpleHttpServer-Kotlin")
+        credentials {
+            username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
+            password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+        }
+    }
+}
+dependencies {
+    implementation("io.simple:simple.http.server:1.0")
+}
+```
+
+Find the latest package version on [here](https://github.com/faridGuliyew/SimpleHttpServer-Kotlin/packages/2579514).
+
+
