@@ -5,6 +5,8 @@ import io.simple.model.HttpRouteDefinition
 import io.simple.model.HttpResponse
 import io.simple.plugin.receive.HttpReceivePlugin
 import io.simple.plugin.receive.HttpReceivePluginScope
+import io.simple.plugin.receive_and_send.HttpReceiveAndSendPlugin
+import io.simple.plugin.receive_and_send.HttpReceiveAndSendPluginScope
 import io.simple.plugin.send.HttpSendPlugin
 import io.simple.plugin.send.HttpSendPluginScope
 
@@ -35,4 +37,6 @@ interface HttpServerConfigScope {
     fun <T : HttpSendPluginScope> install(plugin: HttpSendPlugin<T>, block: T.() -> Unit)
 
     fun <T : HttpReceivePluginScope> install(plugin: HttpReceivePlugin<T>, block: T.() -> Unit)
+
+    fun <T : HttpReceiveAndSendPluginScope> install(plugin: HttpReceiveAndSendPlugin<T>, block: T.() -> Unit)
 }

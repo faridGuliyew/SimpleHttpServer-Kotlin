@@ -7,6 +7,8 @@ import io.simple.logging.errorWithLog
 import io.simple.model.*
 import io.simple.plugin.receive.HttpReceivePlugin
 import io.simple.plugin.receive.HttpReceivePluginScope
+import io.simple.plugin.receive_and_send.HttpReceiveAndSendPlugin
+import io.simple.plugin.receive_and_send.HttpReceiveAndSendPluginScope
 import io.simple.plugin.send.HttpSendPlugin
 import io.simple.plugin.send.HttpSendPluginScope
 import io.simple.utils.*
@@ -25,6 +27,7 @@ class HttpServer (
     private val handlers = mutableMapOf<HttpMethod, MutableMap<String, HttpRouteHandler>>()
     private val receivePlugins = mutableReceivePluginMapOf<HttpReceivePluginScope>()
     private val sendPlugins = mutableSendPluginMapOf<HttpSendPluginScope>()
+    private val receiveAndSendPlugins = mutableReceiveAndSendPluginMapOf<HttpReceiveAndSendPluginScope>()
 
     init {
         configureServer()
@@ -94,6 +97,18 @@ class HttpServer (
             override fun overrideResponse(value: HttpResponse) { httpResponse = value }
         }
         sendPlugins.forEach { plugin, block-> block.invoke(plugin.scopeImpl(sendPluginScope)) }
+
+        // Apply receive & send plugins
+        val receiveAndSendPluginScope = object : HttpReceiveAndSendPluginScope {
+            override val request: HttpRequest = httpRequest
+            override val response: HttpResponse = httpResponse
+            override fun overrideRequest(value: HttpRequest) { httpRequest = value }
+            override fun overrideResponse(value: HttpResponse) { httpResponse = value }
+        }
+        receiveAndSendPlugins.forEach {
+            (plugin, block) -> block.invoke(plugin.scopeImpl(receiveAndSendPluginScope))
+        }
+
         clientSocket.sendResponseAndClose(httpResponse)
     }
 
@@ -177,6 +192,14 @@ class HttpServer (
             override fun <T : HttpReceivePluginScope> install(plugin: HttpReceivePlugin<T>, block: T.() -> Unit) {
                 logger.log("Installed receive plugin: ${plugin.name}", LoggerLevel.INFO)
                 receivePlugins[plugin] = block as HttpReceivePluginScope.() -> Unit
+            }
+
+            override fun <T : HttpReceiveAndSendPluginScope> install(
+                plugin: HttpReceiveAndSendPlugin<T>,
+                block: T.() -> Unit
+            ) {
+                logger.log("Installed receive and send plugin: ${plugin.name}", LoggerLevel.INFO)
+                receiveAndSendPlugins[plugin] = block as HttpReceiveAndSendPluginScope.() -> Unit
             }
         }
         config(httpServerConfigScope)
