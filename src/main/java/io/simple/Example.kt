@@ -1,10 +1,7 @@
 package io.simple
 
 import io.simple.logging.LoggerLevel
-import io.simple.model.ContentTypeValues
-import io.simple.model.HttpHeaders
-import io.simple.model.HttpResponse
-import io.simple.model.HttpStatusCode
+import io.simple.model.*
 import io.simple.plugin.defaults.ContentTypePlugin
 import io.simple.server.*
 import io.simple.utils.findHeader
@@ -19,11 +16,38 @@ fun main() {
             setDefaultContentType(ContentTypeValues.JSON)
         }
 
-        post("/echo") {
+        post(
+            route = HttpRouteDefinition(
+                route = "/echo",
+                pathParams = listOf("command", "id")
+            )
+        ) {
+            val name = queryParams["name"]
+            val age = queryParams["age"]
+            val command = pathParams["command"]
+            val id = pathParams["id"]
+
             return@post HttpResponse(
                 statusCode = HttpStatusCode.OK,
                 headers = listOf(HttpHeaders.CustomHeaders("Authorization","Bearer 123")),
-                body = request.body
+                body = "Command: $command. Id: $id. name: $name, age: $age"
+            )
+        }
+
+        post(
+            route = HttpRouteDefinition(
+                route = "/echo/command",
+                pathParams = listOf("id")
+            )
+        ) {
+            val name = queryParams["name"]
+            val age = queryParams["age"]
+            val id = pathParams["id"]
+
+            return@post HttpResponse(
+                statusCode = HttpStatusCode.OK,
+                headers = listOf(HttpHeaders.CustomHeaders("Authorization","Bearer 123")),
+                body = "Id: $id. name: $name, age: $age"
             )
         }
 
