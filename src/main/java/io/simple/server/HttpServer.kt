@@ -12,6 +12,9 @@ import io.simple.plugin.receive_and_send.HttpReceiveAndSendPluginScope
 import io.simple.plugin.send.HttpSendPlugin
 import io.simple.plugin.send.HttpSendPluginScope
 import io.simple.utils.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.net.ServerSocket
 import java.net.Socket
 import kotlin.concurrent.thread
@@ -115,10 +118,10 @@ class HttpServer (
 
     private fun startListening() {
         logger.log("Listening for clients on 0.0.0.0:$port", LoggerLevel.INFO)
+        val scope = CoroutineScope(Dispatchers.IO)
         while (true) {
             val clientSocket = serverSocket.accept()
-
-            thread {
+            scope.launch {
                 try {
                     handleClient(clientSocket)
                 } catch (e: Exception) {
